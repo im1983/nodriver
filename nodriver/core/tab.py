@@ -170,6 +170,8 @@ class Tab(Connection):
         super().__init__(websocket_url, target, browser, **kwargs)
         self._dom = None
         self._window_id = None
+        self._headless_prepared = False
+        self._expert_prepared = False
 
     @property
     def inspector_url(self):
@@ -199,6 +201,16 @@ class Tab(Connection):
         self, cmd: Generator[dict[str, Any], dict[str, Any], Any]
     ) -> asyncio.Future:
         return await super()._send_oneshot(cmd)
+
+    async def send(self, cdp_obj, _is_update=False):
+            if self.browser:
+                if self.browser.config.headless and not self._headless_prepared:
+                    self._headless_prepared = True
+                    await self._prepare_headless()
+                if self.browser.config.expert and not self._expert_prepared:
+                    self._expert_prepared = True
+                    await self._prepare_expert()
+            return await super().send(cdp_obj, _is_update=_is_update)
 
     async def _prepare_headless(self):
 
